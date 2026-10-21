@@ -7,7 +7,7 @@ namespace APII.Controllers
     [Route("api/[controller]")]
     [ApiController]
        
-        public class BlancoAPiController : ControllerBase
+        public class APIColor : ControllerBase
         {
             public static List<CatalogoColores> listcolores = new List<CatalogoColores>();
 
