@@ -1,58 +1,97 @@
-﻿using APII.Modelos;
-using Microsoft.AspNetCore.Http;
+using APII.Modelos;
 using Microsoft.AspNetCore.Mvc;
+
 namespace APII.Controllers
 {
-
     [Route("api/[controller]")]
     [ApiController]
-       
-        public class APIColor : ControllerBase
+    public class APIColor : ControllerBase
+    {
+        public static List<CatalogoColores> listcolores = new List<CatalogoColores>();
+
+        [HttpGet("Obtenersaludo/{nombre}/{edad}")]
+        public IActionResult ObtenSaludo(string nombre, int edad)
         {
-            public static List<CatalogoColores> listcolores = new List<CatalogoColores>();
-
-
-            [HttpGet("Obtenersaludo/{nombre}/{edad}")]
-            public string ObtenSaludo(string nombre, int edad)
+            if (edad < 0)
             {
-                return $"Hola {nombre} esta es la API,tienes {edad} años";
+                return BadRequest("La edad no puede ser negativa.");
             }
-
-            [HttpGet("ObtenColores")]
-            public List<CatalogoColores> ObtenerColores()
-            {
-                return listcolores;
-            }
-
-            [HttpPost("AgregarColor")]
-            public IActionResult AgregarColor([FromBody] CatalogoColores color)
-            {
-                listcolores.Add(color);
-                return Ok();
-            }
-
-            [HttpDelete("EliminarColor/{id}")]
-            public IActionResult EliminarColor(int id)
-            {
-                var color = listcolores.FirstOrDefault(c => c.id == id);
-                if (color == null)
-                {
-                    return NotFound();
-                }
-                listcolores.Remove(color);
-                return Ok();
-            }
-
-            [HttpPut("ActualizarColor/{id}")]
-            public IActionResult ActualizarColor(int id, [FromBody] CatalogoColores colorActualizado)
-            {
-                var color = listcolores.FirstOrDefault(c => c.id == id);
-                if (color == null)
-                {
-                    return NotFound();
-                }
-                color.NombreColor = colorActualizado.NombreColor;
-                return Ok();
-            }
+            return Ok($"Hola {nombre} esta es la API, tienes {edad} años");
         }
+
+        [HttpGet("ObtenColores")]
+        public IActionResult ObtenerColores()
+        {
+            return Ok(listcolores);
+        }
+
+        [HttpGet("ObtenerColor/{id}")]
+        public IActionResult ObtenerColor(int id)
+        {
+            var color = listcolores.FirstOrDefault(c => c.id == id);
+            if (color == null)
+            {
+                return NotFound("No se encontro el color.");
+            }
+            return Ok(color);
+        }
+
+        [HttpPost("AgregarColor")]
+        public IActionResult AgregarColor([FromBody] CatalogoColores color)
+        {
+            if (color.id <= 0 || string.IsNullOrWhiteSpace(color.NombreColor))
+            {
+                return BadRequest("El id debe ser positivo y el nombre es obligatorio.");
+            }
+
+            var colorExistente = listcolores.FirstOrDefault(c => c.id == color.id);
+            if (colorExistente != null)
+            {
+                return Conflict("Ya existe un color con ese id.");
+            }
+
+            listcolores.Add(color);
+            return Created("/api/APIColor/ObtenerColor/" + color.id, color);
+        }
+
+        [HttpDelete("EliminarColor/{id}")]
+        public IActionResult EliminarColor(int id)
+        {
+            var color = listcolores.FirstOrDefault(c => c.id == id);
+            if (color == null)
+            {
+                return NotFound("No se encontro el color.");
+            }
+            listcolores.Remove(color);
+            return NoContent();
+        }
+
+        [HttpPut("ActualizarColor/{id}")]
+        public IActionResult ActualizarColor(int id, [FromBody] CatalogoColores colorActualizado)
+        {
+            if (id <= 0 || id != colorActualizado.id || string.IsNullOrWhiteSpace(colorActualizado.NombreColor))
+            {
+                return BadRequest("Los ids deben coincidir y ser positivos; el nombre es obligatorio.");
+            }
+
+            var color = listcolores.FirstOrDefault(c => c.id == id);
+            if (color == null)
+            {
+                return NotFound("No se encontro el color.");
+            }
+            color.NombreColor = colorActualizado.NombreColor;
+            return Ok(color);
+        }
+
+        [HttpGet("SimularAcceso")]
+        public IActionResult SimularAcceso(bool autenticado = false)
+        {
+            if (!autenticado)
+            {
+                return Unauthorized("Simulacion: se requiere autenticacion.");
+            }
+            return Ok("Simulacion: acceso permitido.");
+        }
+    }
 }
+
